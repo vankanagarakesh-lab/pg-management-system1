@@ -100,8 +100,40 @@
     </div>
 </div>
 
+<!-- Server Offline Modal -->
+<div class="modal fade" id="serverOfflineModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white border-secondary rounded-4 shadow-lg">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title d-flex align-items-center gap-2 text-warning fw-bold">
+                    <i data-lucide="wifi-off" style="width:20px; height:20px;"></i> Server Unreachable
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-start">
+                <p class="mb-3">Cannot connect to the backend server at <code id="offlineUrlDisplay" class="text-info">http://127.0.0.1:8000</code>.</p>
+                <div class="bg-secondary bg-opacity-25 p-3 rounded-3 mb-3 border border-secondary">
+                    <h6 class="fw-bold text-white mb-2"><i data-lucide="terminal" class="d-inline me-1" style="width:16px; height:16px;"></i> How to start your server:</h6>
+                    <ol class="small text-light-muted ps-3 mb-0">
+                        <li class="mb-2"><strong>On Laptop:</strong> Open terminal in project folder and run:
+                            <br><code class="text-warning fw-bold">php artisan serve</code>
+                        </li>
+                        <li><strong>On Mobile / Online:</strong> If testing from mobile or a cloud host, enter your laptop's Wi-Fi IP (e.g. <code>http://192.168.1.X:8000</code>) or live server URL in the top box.</li>
+                    </ol>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-secondary justify-content-between">
+                <button type="button" class="btn btn-outline-light rounded-pill px-3" onclick="forceNavigate()">Proceed Anyway</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4" onclick="retryPortalConnection()">Retry Connection</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Scripts -->
 <script>
+    let currentTargetUrl = '';
+
     // Initialize backend URL
     document.addEventListener('DOMContentLoaded', () => {
         const savedUrl = localStorage.getItem('laravel_backend_url');
@@ -129,7 +161,7 @@
         alert('Backend URL saved successfully: ' + url);
     }
 
-    function navigateToPortal(role) {
+    async function navigateToPortal(role) {
         let url = document.getElementById('backendUrlInput').value.trim();
         if (!url) {
             url = 'http://127.0.0.1:8000';
@@ -142,27 +174,63 @@
         }
         localStorage.setItem('laravel_backend_url', url);
 
-        // Detect mobile device trying to access 127.0.0.1/localhost
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const isLocalhost = url.includes('127.0.0.1') || url.includes('localhost');
+        currentTargetUrl = `${url}/login/${role}`;
 
-        if (isMobile && isLocalhost) {
-            const proceed = confirm(
-                "📱 Mobile Connection Notice:\n\n" +
-                "You are attempting to connect to '" + url + "' from a mobile device.\n\n" +
-                "'127.0.0.1' points to your mobile phone, not your laptop!\n\n" +
-                "To connect to your laptop's backend from mobile:\n" +
-                "1. Run 'php artisan serve --host=0.0.0.0' on laptop.\n" +
-                "2. Enter your laptop's Wi-Fi IP address (e.g. http://192.168.1.X:8000) or live backend URL in the Server URL box.\n\n" +
-                "Press OK to proceed anyway, or Cancel to update your Server URL."
-            );
-            if (!proceed) {
-                document.getElementById('backendUrlInput').focus();
-                return;
-            }
+        // Fast ping to check if server is reachable before redirecting
+        const isReachable = await checkServerHealth(url);
+        
+        if (isReachable) {
+            window.location.href = currentTargetUrl;
+        } else {
+            document.getElementById('offlineUrlDisplay').innerText = url;
+            const modalEl = document.getElementById('serverOfflineModal');
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
         }
+    }
 
-        window.location.href = `${url}/login/${role}`;
+    function checkServerHealth(baseUrl) {
+        return new Promise((resolve) => {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => {
+                controller.abort();
+                resolve(false);
+            }, 2000);
+
+            fetch(baseUrl, { mode: 'no-cors', cache: 'no-store', signal: controller.signal })
+                .then(() => {
+                    clearTimeout(timeoutId);
+                    resolve(true);
+                })
+                .catch(() => {
+                    clearTimeout(timeoutId);
+                    resolve(false);
+                });
+        });
+    }
+
+    function forceNavigate() {
+        if (currentTargetUrl) {
+            window.location.href = currentTargetUrl;
+        }
+    }
+
+    function retryPortalConnection() {
+        const modalEl = document.getElementById('serverOfflineModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+        
+        let url = document.getElementById('backendUrlInput').value.trim();
+        if (url) {
+            checkServerHealth(url).then(reachable => {
+                if (reachable && currentTargetUrl) {
+                    window.location.href = currentTargetUrl;
+                } else if (modalEl) {
+                    const newModal = new bootstrap.Modal(modalEl);
+                    newModal.show();
+                }
+            });
+        }
     }
 </script>
 

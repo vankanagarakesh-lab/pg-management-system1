@@ -26,6 +26,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        if (User::count() > 0) {
+            return;
+        }
+
         // 1. Seed PG Buildings
         $pg1 = PgBuilding::create(['name' => 'Grand Palace PG (Boys)', 'address' => '12 Main Rd, Sector 4, Bangalore', 'status' => 'active']);
         $pg2 = PgBuilding::create(['name' => 'Elite Residency (Girls)', 'address' => '45 Park St, Sector 2, Bangalore', 'status' => 'active']);

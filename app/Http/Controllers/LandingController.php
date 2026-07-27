@@ -13,11 +13,11 @@ class LandingController extends Controller
     {
         $content = LandingContent::first();
         
-        // Decode JSON arrays
-        $facilities = json_decode($content->facilities_json ?? '[]');
-        $pricingPlans = json_decode($content->pricing_plans_json ?? '[]');
-        $testimonials = json_decode($content->testimonials_json ?? '[]');
-        $locations = json_decode($content->locations_json ?? '[]');
+        // Decode JSON arrays safely
+        $facilities = json_decode($content?->facilities_json ?? '[]');
+        $pricingPlans = json_decode($content?->pricing_plans_json ?? '[]');
+        $testimonials = json_decode($content?->testimonials_json ?? '[]');
+        $locations = json_decode($content?->locations_json ?? '[]');
 
         return view('landing', compact('content', 'facilities', 'pricingPlans', 'testimonials', 'locations'));
     }

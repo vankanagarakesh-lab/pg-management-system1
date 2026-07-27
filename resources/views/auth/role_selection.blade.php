@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', ($landingContent->pg_title ?? 'PG Management System') . ' | Select Role')
+@section('title', ($landingContent?->pg_title ?? 'PG Management System') . ' | Select Role')
 
 @section('content')
 <div class="bg-auth-gradient min-vh-100 d-flex align-items-center py-5">
@@ -8,14 +8,14 @@
         <!-- Brand Title Header -->
         <div class="text-center mb-5">
             <a href="/" class="d-inline-flex align-items-center text-decoration-none mb-4">
-                @if(!empty($landingContent->logo_image))
+                @if(!empty($landingContent?->logo_image))
                     <img src="{{ $landingContent->logo_image }}" alt="Logo" class="me-2" style="height: 36px; max-width: 120px; object-fit: contain;">
                 @else
                     <div class="avatar-box me-2" style="background: var(--primary-gradient);">
                         <i data-lucide="hotel" class="text-white" style="width: 20px; height: 20px;"></i>
                     </div>
                 @endif
-                <h3 class="brand-text text-white mb-0" style="letter-spacing: 0.05em;">{{ $landingContent->logo_text ?: 'PG MANAGEMENT SYSTEM' }}</h3>
+                <h3 class="brand-text text-white mb-0" style="letter-spacing: 0.05em;">{{ $landingContent?->logo_text ?: 'PG MANAGEMENT SYSTEM' }}</h3>
             </a>
             <h2 class="text-white fw-bold display-6">Select Your Portal</h2>
             <p class="text-muted">Choose your user role to access the corresponding panel dashboard</p>

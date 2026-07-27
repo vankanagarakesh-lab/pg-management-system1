@@ -19,9 +19,11 @@ if [ "$DB_CONNECTION" = "sqlite" ] || [ -z "$DB_CONNECTION" ]; then
     fi
 fi
 
-# Run database migrations automatically
+# Run database migrations and seed default data automatically
 echo "Running migrations..."
 php artisan migrate --force
+echo "Seeding initial database content..."
+php artisan db:seed --force
 
 # Optimize Laravel
 php artisan config:cache

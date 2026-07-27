@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Sign In | ' . ($landingContent->pg_title ?? 'PG Management System'))
+@section('title', 'Sign In | ' . ($landingContent?->pg_title ?? 'PG Management System'))
 
 @section('content')
 <div class="container-fluid px-0">
@@ -23,14 +23,14 @@
                 <!-- Brand logo -->
                 <div class="text-center text-lg-start mb-5">
                     <a href="/role-selection" class="d-inline-flex align-items-center text-decoration-none mb-4">
-                        @if(!empty($landingContent->logo_image))
+                        @if(!empty($landingContent?->logo_image))
                             <img src="{{ $landingContent->logo_image }}" alt="Logo" class="me-2" style="height: 36px; max-width: 120px; object-fit: contain;">
                         @else
                             <div class="avatar-box me-2" style="background: var(--primary-gradient);">
                                 <i data-lucide="hotel" class="text-white" style="width: 18px; height: 18px;"></i>
                             </div>
                         @endif
-                        <span class="fw-bold text-dark fs-5" style="letter-spacing: 0.05em;">{{ $landingContent->logo_text ?: 'PG SYSTEM' }}</span>
+                        <span class="fw-bold text-dark fs-5" style="letter-spacing: 0.05em;">{{ $landingContent?->logo_text ?: 'PG SYSTEM' }}</span>
                     </a>
                     
                     <span class="badge px-3 py-2 rounded-pill mb-2 d-inline-flex align-items-center gap-2 

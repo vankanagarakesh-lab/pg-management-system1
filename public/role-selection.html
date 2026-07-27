@@ -39,11 +39,11 @@
         <div class="max-w-md mx-auto mb-5 p-4 rounded-4 shadow border border-light border-opacity-10" style="background: rgba(255, 255, 255, 0.05); max-width: 480px;">
             <label class="form-label text-white small fw-bold mb-2"><i data-lucide="server" class="d-inline-block me-1" style="width:14px; height:14px;"></i> Live Backend API / Server URL</label>
             <div class="input-group">
-                <input type="url" id="backendUrlInput" class="form-control bg-dark border-secondary text-white" placeholder="e.g. http://127.0.0.1:8000" value="http://127.0.0.1:8000">
+                <input type="url" id="backendUrlInput" class="form-control bg-dark border-secondary text-white" placeholder="e.g. https://your-backend-api.com (leave blank for default)" value="">
                 <button class="btn btn-primary" onclick="saveBackendUrl()"><i data-lucide="save" style="width:16px; height:16px;"></i></button>
             </div>
             <div class="form-text text-muted small mt-2">
-                By default, this connects to your local server at <code>http://127.0.0.1:8000</code>. If you deployed your Laravel backend online (Railway, Render, VPS), enter its live URL here to connect this Netlify frontend to your database!
+                If you deployed your Laravel backend online (Railway, Render, VPS), enter its live URL here. Leave empty to use standard portal routes (<code>/login/...</code>).
             </div>
         </div>
 
@@ -104,30 +104,61 @@
 <script>
     // Initialize backend URL
     document.addEventListener('DOMContentLoaded', () => {
-        const savedUrl = localStorage.getItem('laravel_backend_url');
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        let savedUrl = localStorage.getItem('laravel_backend_url');
+
+        // Clear stale local server URL if accessing from remote domain/device
+        if (savedUrl && !isLocal && (savedUrl.includes('127.0.0.1') || savedUrl.includes('localhost'))) {
+            localStorage.removeItem('laravel_backend_url');
+            savedUrl = null;
+        }
+
         if (savedUrl) {
             document.getElementById('backendUrlInput').value = savedUrl;
+        } else if (isLocal) {
+            document.getElementById('backendUrlInput').value = window.location.origin;
+        } else {
+            document.getElementById('backendUrlInput').value = '';
         }
         lucide.createIcons();
     });
 
     function saveBackendUrl() {
         let url = document.getElementById('backendUrlInput').value.trim();
-        // Remove trailing slash if present
-        if (url.endsWith('/')) {
-            url = url.slice(0, -1);
+        if (url) {
+            if (url.endsWith('/')) {
+                url = url.slice(0, -1);
+            }
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+            }
+            localStorage.setItem('laravel_backend_url', url);
+            alert('Backend URL saved successfully: ' + url);
+        } else {
+            localStorage.removeItem('laravel_backend_url');
+            alert('Backend URL cleared. Using default portal navigation.');
         }
-        localStorage.setItem('laravel_backend_url', url);
-        alert('Backend URL saved successfully: ' + url);
     }
 
     function navigateToPortal(role) {
         let url = document.getElementById('backendUrlInput').value.trim();
-        if (url.endsWith('/')) {
-            url = url.slice(0, -1);
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+        // If user typed a custom backend URL (and it's not a broken localhost URL on remote device):
+        if (url && (isLocal || (!url.includes('127.0.0.1') && !url.includes('localhost')))) {
+            if (url.endsWith('/')) {
+                url = url.slice(0, -1);
+            }
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+            }
+            localStorage.setItem('laravel_backend_url', url);
+            window.location.href = `${url}/login/${role}`;
+        } else {
+            // Default to relative portal route (prevents 127.0.0.1 connection errors on mobile)
+            localStorage.removeItem('laravel_backend_url');
+            window.location.href = `/login/${role}`;
         }
-        localStorage.setItem('laravel_backend_url', url);
-        window.location.href = `${url}/login/${role}`;
     }
 </script>
 

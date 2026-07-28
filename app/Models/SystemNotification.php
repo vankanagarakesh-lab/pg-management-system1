@@ -28,8 +28,10 @@ class SystemNotification extends Model
                                 ->subject('New Thulasi PG Notification');
                     });
                     Log::info("[Notification Mail Sent] To: {$user->email}, Content: {$notification->text}");
-                } catch (\Exception $e) {
-                    Log::error("Failed to send notification email to {$user->email}: " . $e->getMessage());
+                } catch (\Throwable $e) {
+                    Log::error("Failed to send notification email to {$user->email}: " . $e->getMessage(), [
+                        'exception' => $e->getTraceAsString()
+                    ]);
                 }
 
                 // Send Mobile SMS Notification

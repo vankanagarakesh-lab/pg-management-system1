@@ -30,5 +30,9 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
+# Start background queue worker for mail & queued notifications processing
+echo "Starting background queue worker..."
+php artisan queue:work --tries=3 --timeout=90 --sleep=3 > /var/www/html/storage/logs/worker.log 2>&1 &
+
 echo "Starting server..."
 exec "$@"

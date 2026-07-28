@@ -258,8 +258,10 @@ class AuthController extends Controller
             \Illuminate\Support\Facades\Mail::raw("Your password reset verification code is: $code", function ($message) use ($email) {
                 $message->to($email)->subject("Password Reset OTP - Thulasi PG");
             });
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("Mail delivery failed during password reset: " . $e->getMessage());
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("Mail delivery failed during password reset: " . $e->getMessage(), [
+                'exception' => $e->getTraceAsString()
+            ]);
             \Illuminate\Support\Facades\Log::info("RESET OTP CODE FOR $email ($role): $code");
         }
 

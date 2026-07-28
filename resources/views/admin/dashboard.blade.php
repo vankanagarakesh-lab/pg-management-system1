@@ -101,6 +101,20 @@
                     <canvas id="occupancyPieChart"></canvas>
                 </div>
             </div>
+    </div>
+
+    <!-- System Diagnostics & Render Mail Test -->
+    <div class="premium-card mb-4">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div>
+                <h6 class="text-dark fw-bold mb-1"><i data-lucide="mail-check" class="text-primary me-2"></i>Render SMTP Mail Notification Diagnostic</h6>
+                <small class="text-muted">Test your deployed SMTP email notifications (Gmail / Custom SMTP) directly from your dashboard.</small>
+            </div>
+            <form action="/admin/test-email" method="POST" class="d-flex align-items-center gap-2 flex-wrap">
+                @csrf
+                <input type="email" name="email" class="form-control form-control-sm" placeholder="Recipient email address" value="{{ $loggedUser->email ?? '' }}" required style="max-width: 250px;">
+                <button type="submit" class="btn btn-primary btn-sm rounded-pill"><i data-lucide="send" style="width:14px; height:14px;"></i> Send Test Email</button>
+            </form>
         </div>
     </div>
 

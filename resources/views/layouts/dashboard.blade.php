@@ -2,6 +2,8 @@
 
 @section('content')
 <div class="dashboard-wrapper">
+    <!-- Backdrop overlay for mobile drawer -->
+    <div class="sidebar-backdrop d-lg-none" id="sidebarBackdrop" onclick="toggleSidebarMenu()"></div>
 
     <!-- Collapsible Sidebar -->
     <aside class="dashboard-sidebar p-4" id="sidebarMenu">
@@ -249,8 +251,12 @@
 <script>
     function toggleSidebarMenu() {
         const sidebar = document.getElementById('sidebarMenu');
+        const backdrop = document.getElementById('sidebarBackdrop');
         if (window.innerWidth < 992) {
             sidebar.classList.toggle('show');
+            if (backdrop) {
+                backdrop.classList.toggle('show', sidebar.classList.contains('show'));
+            }
         } else {
             sidebar.classList.toggle('collapsed');
             const isCollapsed = sidebar.classList.contains('collapsed');

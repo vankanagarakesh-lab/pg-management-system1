@@ -81,8 +81,9 @@ Route::prefix('admin')->group(function () {
     Route::post('/resolve-inquiry/{id}', [AdminController::class, 'resolveInquiry']);
     Route::post('/delete-inquiry/{id}', [AdminController::class, 'deleteInquiry']);
     
-    // Notifications
+    // Notifications & Diagnostics
     Route::post('/mark-read/{id}', [AdminController::class, 'markNotifRead']);
+    Route::post('/test-email', [AdminController::class, 'testEmail']);
 });
 
 // 4. Student Dashboard Routes

@@ -726,4 +726,18 @@ class AdminController extends Controller
         $invoice->delete();
         return back()->with('success', 'Payment invoice record deleted successfully.');
     }
+
+    public function testEmail(\Illuminate\Http\Request $request)
+    {
+        $targetEmail = $request->input('email', session('user_email', 'admin@example.com'));
+        try {
+            \Illuminate\Support\Facades\Mail::raw("Hello Admin,\n\nThis is a live test notification from your Thulasi PG system deployed on Render!\n\nTimestamp: " . date('Y-m-d H:i:s'), function ($message) use ($targetEmail) {
+                $message->to($targetEmail)->subject('Thulasi PG - Render SMTP Test Notification');
+            });
+            return back()->with('success', "Test email successfully sent to {$targetEmail}!");
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("Test email failed: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return back()->with('errors', collect(["Failed to send test email: " . $e->getMessage()]));
+        }
+    }
 }

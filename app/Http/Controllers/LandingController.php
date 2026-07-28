@@ -39,6 +39,14 @@ class LandingController extends Controller
             'status' => 'pending',
         ]);
 
+        // Trigger system notification & email to admin
+        \App\Models\SystemNotification::create([
+            'date' => date('Y-m-d'),
+            'text' => "New Visitor Inquiry from {$request->visitor_name} ({$request->visitor_email}): {$request->visitor_subject}",
+            'type' => 'admin',
+            'read' => false
+        ]);
+
         return back()->with('success', 'Thank you for reaching out! Our relationship manager will contact you shortly.');
     }
 }

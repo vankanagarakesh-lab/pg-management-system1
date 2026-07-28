@@ -16,8 +16,12 @@ class SystemNotification extends Model
         static::created(function ($notification) {
             if ($notification->user_id) {
                 $users = User::where('id', $notification->user_id)->get();
+            } else if ($notification->type === 'all') {
+                $users = User::all();
             } else {
-                $users = User::where('role', $notification->type)->get();
+                $users = User::where('role', $notification->type)
+                            ->orWhere('staff_role', $notification->type)
+                            ->get();
             }
             foreach ($users as $user) {
                 // Send Email Notification

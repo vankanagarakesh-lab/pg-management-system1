@@ -50,8 +50,8 @@ class DatabaseSeeder extends Seeder
         // Admin
         User::create([
             'name' => 'Rohan Sharma (Owner)',
-            'email' => env('MAIL_USERNAME', 'vankarajesh41@gmail.com'),
-            'password' => Hash::make('admin'),
+            'email' => 'vankanagarakesh@gmail.com',
+            'password' => Hash::make('Rakesh@123'),
             'phone' => '9876543210',
             'role' => 'admin',
             'approval_status' => 'approved',

@@ -28,7 +28,8 @@ class HttpApiTransport extends AbstractTransport
         }
         $apiKey = trim((string) $apiKey);
 
-        $email = Email::fromRaw($message->toString());
+        /** @var Email $email */
+        $email = $message->getOriginalMessage();
 
         $to = [];
         foreach ($email->getTo() as $address) {

@@ -273,6 +273,15 @@ class AdminController extends Controller
         $student = User::findOrFail($id);
         $student->approval_status = 'rejected';
         $student->save();
+
+        SystemNotification::create([
+            'date' => date('Y-m-d'),
+            'text' => "Your registration request for Thulasi PG has been reviewed and rejected by Administration.",
+            'type' => 'student',
+            'user_id' => $student->id,
+            'read' => false
+        ]);
+
         return back()->with('success', "Student registration has been rejected.");
     }
 
@@ -290,6 +299,14 @@ class AdminController extends Controller
             $room->occupied--;
             $room->save();
         }
+
+        SystemNotification::create([
+            'date' => date('Y-m-d'),
+            'text' => "Your tenancy account at Thulasi PG has been discharged and bed slot released.",
+            'type' => 'student',
+            'user_id' => $student->id,
+            'read' => false
+        ]);
 
         return back()->with('success', "Tenant account has been discharged and bed slot released.");
     }

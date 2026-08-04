@@ -36,13 +36,17 @@ class SendNotificationEmailJob implements ShouldQueue
 
         if (!empty($notification->user_id)) {
             $users = User::where('id', $notification->user_id)->get();
-        } else if ($notification->type === 'all') {
+        } else if (strtolower(trim($notification->type ?? '')) === 'all') {
             $users = User::all();
         } else {
             $type = strtolower(trim($notification->type ?? ''));
             $users = User::where(function($q) use ($type) {
-                $q->whereRaw('LOWER(role) = ?', [$type])
-                  ->orWhereRaw('LOWER(staff_role) = ?', [$type]);
+                $q->whereRaw('LOWER(TRIM(role)) = ?', [$type])
+                  ->orWhereRaw('LOWER(TRIM(staff_role)) = ?', [$type]);
+                if ($type === 'student' || $type === 'tenant') {
+                    $q->orWhereRaw('LOWER(TRIM(role)) = ?', ['tenant'])
+                      ->orWhereRaw('LOWER(TRIM(role)) = ?', ['student']);
+                }
             })->get();
         }
 
@@ -56,11 +60,12 @@ class SendNotificationEmailJob implements ShouldQueue
 
             // Send Email Notification
             try {
-                $emailText = "Hello {$user->name},\n\nThis is a notification from Thulasi PG:\n{$notification->text}\n\nBest regards,\nThulasi PG Team";
-                Mail::raw($emailText, function ($message) use ($user, $fromAddress, $fromName) {
+                $subject = "Notification - Thulasi PG System";
+                $emailText = "Hello {$user->name},\n\nThis is an official notification from Thulasi PG Management System:\n\n{$notification->text}\n\nDate: " . ($notification->date ?: date('Y-m-d')) . "\n\nBest regards,\nThulasi PG Management Team";
+                Mail::raw($emailText, function ($message) use ($user, $fromAddress, $fromName, $subject) {
                     $message->from($fromAddress, $fromName)
                             ->to($user->email)
-                            ->subject('New Thulasi PG Notification');
+                            ->subject($subject);
                 });
                 Log::info("[Notification Mail Sent] To: {$user->email}, Notification ID: {$notification->id}");
             } catch (\Throwable $e) {

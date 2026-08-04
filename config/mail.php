@@ -39,7 +39,7 @@ return [
 
         'smtp' => [
             'transport' => 'smtp',
-            'scheme' => env('MAIL_SCHEME') ?: null,
+            'scheme' => env('MAIL_SCHEME') ?: ((env('MAIL_PORT') == 465 || env('MAIL_ENCRYPTION') === 'ssl') ? 'smtps' : null),
             'url' => env('MAIL_URL') ?: null,
             'host' => env('MAIL_HOST') ?: 'smtp.gmail.com',
             'port' => (int) (env('MAIL_PORT') ?: 587),
@@ -48,7 +48,7 @@ return [
             'password' => (env('MAIL_HOST') === 'smtp.gmail.com' || str_contains((string) env('MAIL_HOST', ''), 'gmail'))
                 ? str_replace(' ', '', (string) env('MAIL_PASSWORD'))
                 : (env('MAIL_PASSWORD') ?: null),
-            'timeout' => 30,
+            'timeout' => 15,
             'local_domain' => env('MAIL_EHLO_DOMAIN') ?: (parse_url((string) (env('APP_URL') ?: 'http://localhost'), PHP_URL_HOST) ?: 'localhost'),
             'stream' => [
                 'ssl' => [

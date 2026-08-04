@@ -741,7 +741,7 @@ class AdminController extends Controller
             return back()->with('success', "Test email successfully sent to {$targetEmail}!");
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error("Test email failed: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            return back()->with('errors', collect(["Failed to send test email: " . $e->getMessage()]));
+            return back()->withErrors(["Failed to send test email: " . $e->getMessage()]);
         }
     }
 }

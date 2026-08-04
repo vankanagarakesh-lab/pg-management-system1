@@ -269,34 +269,20 @@ class AuthController extends Controller
             'reset_code' => $code
         ]);
 
-        // Create system notification for audit trail
-        try {
-            \App\Models\SystemNotification::create([
-                'date' => date('Y-m-d'),
-                'text' => "Password reset OTP requested for {$user->email}. Verification code: {$code}",
-                'type' => $user->role ?: 'all',
-                'user_id' => $user->id,
-                'read' => false
-            ]);
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error("SystemNotification creation failed: " . $e->getMessage());
-        }
-
-        // Send direct OTP mail via HTTPS API
+        // Send single direct OTP mail via HTTPS API
         try {
             $fromAddress = env('MAIL_FROM_ADDRESS') ?: (env('MAIL_USERNAME') ?: 'vankarajesh41@gmail.com');
             $fromName = env('MAIL_FROM_NAME') ?: config('mail.from.name', 'Thulasi PG');
             
-            \Illuminate\Support\Facades\Mail::raw("Hello {$user->name},\n\nYour password reset verification code for Thulasi PG is: {$code}\n\nIf you did not request this code, please ignore this email.\n\nBest regards,\nThulasi PG Management Team", function ($message) use ($user, $fromAddress, $fromName) {
+            \Illuminate\Support\Facades\Mail::raw("Hello {$user->name},\n\nYour password reset verification code for Thulasi PG is: {$code}\n\nThis code will expire shortly. If you did not request a password reset, please ignore this message.\n\nBest regards,\nThulasi PG Management Team", function ($message) use ($user, $fromAddress, $fromName, $code) {
                 $message->from($fromAddress, $fromName)
                         ->to($user->email)
-                        ->subject("Password Reset OTP - Thulasi PG");
+                        ->subject("Your Verification Code: {$code} - Thulasi PG");
             });
 
             \Illuminate\Support\Facades\Log::info("[Password Reset OTP Sent] To: {$user->email}, Code: {$code}");
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error("Direct mail notice for {$user->email}: " . $e->getMessage());
-            \Illuminate\Support\Facades\Log::info("RESET OTP CODE FOR {$user->email} ({$user->role}): $code");
         }
 
         // ALWAYS redirect user to /forgot-password-verify page to enter OTP code

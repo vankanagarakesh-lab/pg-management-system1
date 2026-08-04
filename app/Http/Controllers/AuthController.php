@@ -235,12 +235,18 @@ class AuthController extends Controller
             'role' => 'required|in:admin,student,staff'
         ]);
 
-        $email = strtolower($request->email);
-        $role = $request->role;
+        $email = strtolower(trim($request->email));
+        $role = trim($request->role);
 
-        $user = User::where('email', $email)->where('role', $role)->first();
+        $user = User::whereRaw('LOWER(TRIM(email)) = ?', [$email])
+                    ->where(function($q) use ($role) {
+                        $q->whereRaw('LOWER(TRIM(role)) = ?', [strtolower($role)])
+                          ->orWhereRaw('LOWER(TRIM(staff_role)) = ?', [strtolower($role)]);
+                    })
+                    ->first();
+
         if (!$user) {
-            return back()->withErrors(['email' => 'No account found with this email for the selected role.']);
+            return back()->withInput()->withErrors(['email' => 'No account found with email "' . $email . '" for role "' . ucfirst($role) . '".']);
         }
 
         // Generate 6 digit OTP
@@ -248,7 +254,7 @@ class AuthController extends Controller
 
         // Store details in session
         session([
-            'reset_email' => $email,
+            'reset_email' => $user->email,
             'reset_role' => $role,
             'reset_code' => $code
         ]);
@@ -257,19 +263,24 @@ class AuthController extends Controller
         try {
             $fromAddress = config('mail.from.address') ?: (env('MAIL_USERNAME') ?: 'hello@example.com');
             $fromName = config('mail.from.name') ?: (env('APP_NAME') ?: 'Thulasi PG');
-            \Illuminate\Support\Facades\Mail::raw("Your password reset verification code is: $code", function ($message) use ($email, $fromAddress, $fromName) {
+            
+            \Illuminate\Support\Facades\Mail::raw("Hello {$user->name},\n\nYour password reset verification code for Thulasi PG is: {$code}\n\nIf you did not request this code, please ignore this email.\n\nBest regards,\nThulasi PG Team", function ($message) use ($user, $fromAddress, $fromName) {
                 $message->from($fromAddress, $fromName)
-                        ->to($email)
+                        ->to($user->email)
                         ->subject("Password Reset OTP - Thulasi PG");
             });
+
+            \Illuminate\Support\Facades\Log::info("[Password Reset OTP Sent] To: {$user->email}, Code: {$code}");
+
+            return redirect('/forgot-password-verify')->with('info', "Verification code has been sent to {$user->email}.");
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error("Mail delivery failed during password reset: " . $e->getMessage(), [
+            \Illuminate\Support\Facades\Log::error("Mail delivery failed during password reset for {$user->email}: " . $e->getMessage(), [
                 'exception' => $e->getTraceAsString()
             ]);
-            \Illuminate\Support\Facades\Log::info("RESET OTP CODE FOR $email ($role): $code");
-        }
+            \Illuminate\Support\Facades\Log::info("RESET OTP CODE FOR {$user->email} ($role): $code");
 
-        return redirect('/forgot-password-verify')->with('info', 'Verification code has been sent to your email.');
+            return back()->withInput()->withErrors(['email' => 'Failed to deliver OTP email to ' . $user->email . ': ' . $e->getMessage() . '. Please verify your Render SMTP environment settings.']);
+        }
     }
 
     public function showForgotPasswordVerify()
@@ -315,7 +326,7 @@ class AuthController extends Controller
         }
 
         // Update password
-        $user = User::where('email', $email)->where('role', $role)->first();
+        $user = User::whereRaw('LOWER(TRIM(email)) = ?', [strtolower(trim($email))])->first();
         if ($user) {
             $user->password = Hash::make($request->password);
             $user->save();

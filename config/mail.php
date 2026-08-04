@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'default' => env('MAIL_MAILER', 'smtp'),
+    'default' => env('MAIL_MAILER') ?: 'smtp',
 
     /*
     |--------------------------------------------------------------------------
@@ -39,15 +39,17 @@ return [
 
         'smtp' => [
             'transport' => 'smtp',
-            'scheme' => env('MAIL_SCHEME'),
-            'url' => env('MAIL_URL'),
-            'host' => env('MAIL_HOST', 'smtp.gmail.com'),
-            'port' => env('MAIL_PORT', 587),
-            'encryption' => env('MAIL_ENCRYPTION', 'tls'),
-            'username' => env('MAIL_USERNAME'),
-            'password' => str_replace(' ', '', (string) env('MAIL_PASSWORD')),
-            'timeout' => 15,
-            'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+            'scheme' => env('MAIL_SCHEME') ?: null,
+            'url' => env('MAIL_URL') ?: null,
+            'host' => env('MAIL_HOST') ?: 'smtp.gmail.com',
+            'port' => (int) (env('MAIL_PORT') ?: 587),
+            'encryption' => env('MAIL_ENCRYPTION') ?: 'tls',
+            'username' => env('MAIL_USERNAME') ?: null,
+            'password' => (env('MAIL_HOST') === 'smtp.gmail.com' || str_contains((string) env('MAIL_HOST', ''), 'gmail'))
+                ? str_replace(' ', '', (string) env('MAIL_PASSWORD'))
+                : (env('MAIL_PASSWORD') ?: null),
+            'timeout' => 30,
+            'local_domain' => env('MAIL_EHLO_DOMAIN') ?: (parse_url((string) (env('APP_URL') ?: 'http://localhost'), PHP_URL_HOST) ?: 'localhost'),
             'stream' => [
                 'ssl' => [
                     'allow_self_signed' => true,
@@ -75,12 +77,12 @@ return [
 
         'sendmail' => [
             'transport' => 'sendmail',
-            'path' => env('MAIL_SENDMAIL_PATH', '/usr/sbin/sendmail -bs -i'),
+            'path' => env('MAIL_SENDMAIL_PATH') ?: '/usr/sbin/sendmail -bs -i',
         ],
 
         'log' => [
             'transport' => 'log',
-            'channel' => env('MAIL_LOG_CHANNEL'),
+            'channel' => env('MAIL_LOG_CHANNEL') ?: null,
         ],
 
         'array' => [
@@ -119,8 +121,8 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', env('MAIL_USERNAME', 'hello@example.com')),
-        'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Thulasi PG')),
+        'address' => env('MAIL_FROM_ADDRESS') ?: (env('MAIL_USERNAME') ?: 'hello@example.com'),
+        'name' => env('MAIL_FROM_NAME') ?: (env('APP_NAME') ?: 'Thulasi PG'),
     ],
 
 ];

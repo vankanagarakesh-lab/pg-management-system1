@@ -16,8 +16,11 @@ class TestMailCommand extends Command
         $this->info("Attempting to send test email to: {$recipient}...");
 
         try {
-            Mail::raw("Hello,\n\nThis is a test notification email sent from Thulasi PG Management System to verify Render SMTP setup.\n\nTime: " . date('Y-m-d H:i:s'), function ($message) use ($recipient) {
-                $message->to($recipient)
+            $fromAddress = config('mail.from.address') ?: (env('MAIL_USERNAME') ?: 'hello@example.com');
+            $fromName = config('mail.from.name') ?: (env('APP_NAME') ?: 'Thulasi PG');
+            Mail::raw("Hello,\n\nThis is a test notification email sent from Thulasi PG Management System to verify Render SMTP setup.\n\nTime: " . date('Y-m-d H:i:s'), function ($message) use ($recipient, $fromAddress, $fromName) {
+                $message->from($fromAddress, $fromName)
+                        ->to($recipient)
                         ->subject('Thulasi PG - Render Test Notification');
             });
 

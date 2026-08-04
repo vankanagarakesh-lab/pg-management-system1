@@ -14,8 +14,12 @@ class SystemNotification extends Model
     protected static function booted()
     {
         static::created(function ($notification) {
-            // Dispatch notification email sending asynchronously to prevent request blocking / latency
-            \App\Jobs\SendNotificationEmailJob::dispatch($notification->id);
+            try {
+                // Dispatch notification email sending asynchronously or synchronously depending on QUEUE_CONNECTION
+                \App\Jobs\SendNotificationEmailJob::dispatch($notification->id);
+            } catch (\Throwable $e) {
+                Log::error("[SystemNotification] Failed to dispatch notification email job: " . $e->getMessage());
+            }
         });
     }
 }

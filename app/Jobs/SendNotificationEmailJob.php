@@ -34,15 +34,20 @@ class SendNotificationEmailJob implements ShouldQueue
             return;
         }
 
-        if ($notification->user_id) {
+        if (!empty($notification->user_id)) {
             $users = User::where('id', $notification->user_id)->get();
         } else if ($notification->type === 'all') {
             $users = User::all();
         } else {
-            $users = User::where('role', $notification->type)
-                        ->orWhere('staff_role', $notification->type)
-                        ->get();
+            $type = strtolower(trim($notification->type ?? ''));
+            $users = User::where(function($q) use ($type) {
+                $q->whereRaw('LOWER(role) = ?', [$type])
+                  ->orWhereRaw('LOWER(staff_role) = ?', [$type]);
+            })->get();
         }
+
+        $fromAddress = config('mail.from.address') ?: (env('MAIL_USERNAME') ?: 'hello@example.com');
+        $fromName = config('mail.from.name') ?: (env('APP_NAME') ?: 'Thulasi PG');
 
         foreach ($users as $user) {
             if (empty($user->email)) {
@@ -52,13 +57,16 @@ class SendNotificationEmailJob implements ShouldQueue
             // Send Email Notification
             try {
                 $emailText = "Hello {$user->name},\n\nThis is a notification from Thulasi PG:\n{$notification->text}\n\nBest regards,\nThulasi PG Team";
-                Mail::raw($emailText, function ($message) use ($user) {
-                    $message->to($user->email)
+                Mail::raw($emailText, function ($message) use ($user, $fromAddress, $fromName) {
+                    $message->from($fromAddress, $fromName)
+                            ->to($user->email)
                             ->subject('New Thulasi PG Notification');
                 });
                 Log::info("[Notification Mail Sent] To: {$user->email}, Notification ID: {$notification->id}");
             } catch (\Throwable $e) {
-                Log::error("Failed to send notification email to {$user->email}: " . $e->getMessage());
+                Log::error("Failed to send notification email to {$user->email}: " . $e->getMessage(), [
+                    'exception' => $e->getTraceAsString()
+                ]);
             }
 
             // Send Mobile SMS Notification if Twilio is configured

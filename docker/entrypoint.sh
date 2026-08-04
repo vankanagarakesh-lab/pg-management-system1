@@ -25,6 +25,11 @@ php artisan migrate --force
 echo "Seeding initial database content..."
 php artisan db:seed --force
 
+# Clear stale caches to load fresh environment variables from Render dashboard
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+
 # Optimize Laravel
 php artisan config:cache
 php artisan route:cache

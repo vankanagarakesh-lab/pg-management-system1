@@ -255,8 +255,12 @@ class AuthController extends Controller
 
         // Send OTP mail
         try {
-            \Illuminate\Support\Facades\Mail::raw("Your password reset verification code is: $code", function ($message) use ($email) {
-                $message->to($email)->subject("Password Reset OTP - Thulasi PG");
+            $fromAddress = config('mail.from.address') ?: (env('MAIL_USERNAME') ?: 'hello@example.com');
+            $fromName = config('mail.from.name') ?: (env('APP_NAME') ?: 'Thulasi PG');
+            \Illuminate\Support\Facades\Mail::raw("Your password reset verification code is: $code", function ($message) use ($email, $fromAddress, $fromName) {
+                $message->from($fromAddress, $fromName)
+                        ->to($email)
+                        ->subject("Password Reset OTP - Thulasi PG");
             });
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error("Mail delivery failed during password reset: " . $e->getMessage(), [

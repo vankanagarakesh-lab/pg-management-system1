@@ -731,8 +731,12 @@ class AdminController extends Controller
     {
         $targetEmail = $request->input('email', session('user_email', 'admin@example.com'));
         try {
-            \Illuminate\Support\Facades\Mail::raw("Hello Admin,\n\nThis is a live test notification from your Thulasi PG system deployed on Render!\n\nTimestamp: " . date('Y-m-d H:i:s'), function ($message) use ($targetEmail) {
-                $message->to($targetEmail)->subject('Thulasi PG - Render SMTP Test Notification');
+            $fromAddress = config('mail.from.address') ?: (env('MAIL_USERNAME') ?: 'hello@example.com');
+            $fromName = config('mail.from.name') ?: (env('APP_NAME') ?: 'Thulasi PG');
+            \Illuminate\Support\Facades\Mail::raw("Hello Admin,\n\nThis is a live test notification from your Thulasi PG system deployed on Render!\n\nTimestamp: " . date('Y-m-d H:i:s'), function ($message) use ($targetEmail, $fromAddress, $fromName) {
+                $message->from($fromAddress, $fromName)
+                        ->to($targetEmail)
+                        ->subject('Thulasi PG - Render SMTP Test Notification');
             });
             return back()->with('success', "Test email successfully sent to {$targetEmail}!");
         } catch (\Throwable $e) {

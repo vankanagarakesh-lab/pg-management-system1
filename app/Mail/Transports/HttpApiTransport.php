@@ -22,13 +22,11 @@ class HttpApiTransport extends AbstractTransport
 
     protected function doSend(SentMessage $message): void
     {
-        $apiKey = $this->apiKey;
+        $apiKey = trim($this->apiKey, " \t\n\r\0\x0B\"'");
         if (empty($apiKey) || (!str_contains($apiKey, '-') && !str_starts_with($apiKey, 're_'))) {
-            $apiKey = env('MAIL_PASSWORD') ?: (env('MAIL_MAILER') ?: (env('BREVO_API_KEY') ?: ''));
+            $apiKey = trim((string)(env('MAIL_PASSWORD') ?: (env('MAIL_MAILER') ?: (env('BREVO_API_KEY') ?: ''))), " \t\n\r\0\x0B\"'");
         }
-        $apiKey = trim((string) $apiKey);
 
-        /** @var Email $email */
         $email = $message->getOriginalMessage();
 
         $to = [];
@@ -58,16 +56,16 @@ class HttpApiTransport extends AbstractTransport
         // Auto-detect provider
         $provider = $this->provider;
         if ($provider === 'auto') {
-            if (str_starts_with($this->apiKey, 're_')) {
+            if (str_starts_with($apiKey, 're_')) {
                 $provider = 'resend';
             } else {
                 $provider = 'brevo';
             }
         }
 
-        if ($provider === 'resend' || str_starts_with($this->apiKey, 're_')) {
+        if ($provider === 'resend' || str_starts_with($apiKey, 're_')) {
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey,
+                'Authorization' => 'Bearer ' . $apiKey,
                 'Content-Type' => 'application/json',
             ])->post('https://api.resend.com/emails', [
                 'from' => "{$fromName} <{$fromEmail}>",
@@ -78,12 +76,13 @@ class HttpApiTransport extends AbstractTransport
             ]);
 
             if ($response->failed()) {
+                Log::error("[HttpApiTransport] Resend API Error ({$response->status()}): " . $response->body());
                 throw new \RuntimeException("Resend HTTPS API delivery failed: " . $response->body());
             }
         } else {
             // Send via Brevo REST API v3 over HTTPS Port 443
             $response = Http::withHeaders([
-                'api-key' => $this->apiKey,
+                'api-key' => $apiKey,
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
             ])->post('https://api.brevo.com/v3/smtp/email', [
@@ -98,11 +97,14 @@ class HttpApiTransport extends AbstractTransport
             ]);
 
             if ($response->failed()) {
-                throw new \RuntimeException("Brevo HTTPS API delivery failed: " . $response->body());
+                Log::error("[HttpApiTransport] Brevo API Error ({$response->status()}): " . $response->body());
+                throw new \RuntimeException("Brevo HTTPS API delivery failed ({$response->status()}): " . $response->body());
             }
-        }
 
-        Log::info("[HttpApiTransport] Email sent successfully via HTTPS API (Port 443) to " . implode(', ', array_column($to, 'email')));
+            $resData = $response->json();
+            $msgId = $resData['messageId'] ?? 'N/A';
+            Log::info("[HttpApiTransport] Email delivered via Brevo API to " . implode(', ', array_column($to, 'email')) . " (Message ID: {$msgId})");
+        }
     }
 
     public function __toString(): string

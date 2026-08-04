@@ -14,7 +14,11 @@ return [
     |
     */
 
-    'default' => env('MAIL_MAILER') ?: 'smtp',
+    'default' => env('MAIL_MAILER') ?: (
+        (str_contains((string) env('MAIL_HOST'), 'brevo') || str_contains((string) env('MAIL_PASSWORD'), 'keysib'))
+            ? 'brevo_api'
+            : (str_contains((string) env('MAIL_PASSWORD'), 're_') ? 'resend_api' : 'smtp')
+    ),
 
     /*
     |--------------------------------------------------------------------------
@@ -31,7 +35,7 @@ return [
     |
     | Supported: "smtp", "sendmail", "mailgun", "ses", "ses-v2",
     |            "postmark", "resend", "log", "array",
-    |            "failover", "roundrobin"
+    |            "failover", "roundrobin", "brevo_api", "resend_api", "http_api"
     |
     */
 

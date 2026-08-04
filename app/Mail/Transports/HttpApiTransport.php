@@ -41,8 +41,15 @@ class HttpApiTransport extends AbstractTransport
 
         $fromList = $email->getFrom();
         $from = $fromList[0] ?? null;
-        $fromEmail = $from ? $from->getAddress() : (config('mail.from.address') ?: 'vankarajesh41@gmail.com');
-        $fromName = $from ? ($from->getName() ?: config('mail.from.name')) : config('mail.from.name', 'Thulasi PG');
+        $rawFromEmail = $from ? $from->getAddress() : null;
+
+        if (!empty($rawFromEmail) && filter_var($rawFromEmail, FILTER_VALIDATE_EMAIL) && !str_contains($rawFromEmail, 'example.com')) {
+            $fromEmail = $rawFromEmail;
+        } else {
+            $fromEmail = env('MAIL_FROM_ADDRESS') ?: (env('MAIL_USERNAME') ?: 'vankarajesh41@gmail.com');
+        }
+
+        $fromName = ($from && !empty($from->getName())) ? $from->getName() : (env('MAIL_FROM_NAME') ?: config('mail.from.name', 'Thulasi PG'));
 
         $subject = $email->getSubject() ?: 'Thulasi PG Notification';
         $textBody = $email->getTextBody() ?: strip_tags($email->getHtmlBody() ?? '');

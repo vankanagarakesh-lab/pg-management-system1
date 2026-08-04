@@ -232,43 +232,62 @@ class AuthController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
-            'role' => 'required|in:admin,student,staff'
+            'role' => 'required'
         ]);
 
         $email = strtolower(trim($request->email));
-        $role = trim($request->role);
+        $role = strtolower(trim($request->role));
 
+        // Flexible case-insensitive user lookup
         $user = User::whereRaw('LOWER(TRIM(email)) = ?', [$email])
                     ->where(function($q) use ($role) {
-                        $q->whereRaw('LOWER(TRIM(role)) = ?', [strtolower($role)])
-                          ->orWhereRaw('LOWER(TRIM(staff_role)) = ?', [strtolower($role)]);
+                        $q->whereRaw('LOWER(TRIM(role)) = ?', [$role])
+                          ->orWhereRaw('LOWER(TRIM(staff_role)) = ?', [$role]);
+                        if (in_array($role, ['student', 'tenant'])) {
+                            $q->orWhereRaw('LOWER(TRIM(role)) = ?', ['tenant'])
+                              ->orWhereRaw('LOWER(TRIM(role)) = ?', ['student']);
+                        }
                     })
                     ->first();
 
+        // Fallback to email lookup if role selection was mismatched
         if (!$user) {
-            return back()->withInput()->withErrors(['email' => 'No account found with email "' . $email . '" for role "' . ucfirst($role) . '".']);
+            $user = User::whereRaw('LOWER(TRIM(email)) = ?', [$email])->first();
+        }
+
+        if (!$user) {
+            return back()->withInput()->withErrors(['email' => 'No account found registered with email "' . $email . '". Please check your email address.']);
         }
 
         // Generate 6 digit OTP
-        $code = rand(100000, 999999);
+        $code = (string) rand(100000, 999999);
 
         // Store details in session
         session([
             'reset_email' => $user->email,
-            'reset_role' => $role,
+            'reset_role' => $user->role ?: $role,
             'reset_code' => $code
         ]);
 
         // Send OTP mail
         try {
-            $fromAddress = config('mail.from.address') ?: (env('MAIL_USERNAME') ?: 'hello@example.com');
-            $fromName = config('mail.from.name') ?: (env('APP_NAME') ?: 'Thulasi PG');
+            $fromAddress = env('MAIL_FROM_ADDRESS') ?: (env('MAIL_USERNAME') ?: 'vankarajesh41@gmail.com');
+            $fromName = env('MAIL_FROM_NAME') ?: config('mail.from.name', 'Thulasi PG');
             
-            \Illuminate\Support\Facades\Mail::raw("Hello {$user->name},\n\nYour password reset verification code for Thulasi PG is: {$code}\n\nIf you did not request this code, please ignore this email.\n\nBest regards,\nThulasi PG Team", function ($message) use ($user, $fromAddress, $fromName) {
+            \Illuminate\Support\Facades\Mail::raw("Hello {$user->name},\n\nYour password reset verification code for Thulasi PG is: {$code}\n\nIf you did not request this code, please ignore this email.\n\nBest regards,\nThulasi PG Management Team", function ($message) use ($user, $fromAddress, $fromName) {
                 $message->from($fromAddress, $fromName)
                         ->to($user->email)
                         ->subject("Password Reset OTP - Thulasi PG");
             });
+
+            // Also create system notification for audit trail
+            \App\Models\SystemNotification::create([
+                'date' => date('Y-m-d'),
+                'text' => "Password reset OTP requested for {$user->email}. Verification code: {$code}",
+                'type' => $user->role ?: 'all',
+                'user_id' => $user->id,
+                'read' => false
+            ]);
 
             \Illuminate\Support\Facades\Log::info("[Password Reset OTP Sent] To: {$user->email}, Code: {$code}");
 
@@ -277,7 +296,7 @@ class AuthController extends Controller
             \Illuminate\Support\Facades\Log::error("Mail delivery failed during password reset for {$user->email}: " . $e->getMessage(), [
                 'exception' => $e->getTraceAsString()
             ]);
-            \Illuminate\Support\Facades\Log::info("RESET OTP CODE FOR {$user->email} ($role): $code");
+            \Illuminate\Support\Facades\Log::info("RESET OTP CODE FOR {$user->email} ({$user->role}): $code");
 
             return back()->withInput()->withErrors(['email' => 'Failed to deliver OTP email to ' . $user->email . ': ' . $e->getMessage() . '. Please verify your Render SMTP environment settings.']);
         }

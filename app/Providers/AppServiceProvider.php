@@ -20,17 +20,17 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         \Illuminate\Support\Facades\Mail::extend('brevo_api', function (array $config) {
-            $apiKey = env('BREVO_API_KEY') ?: (env('MAIL_PASSWORD') ?: '');
+            $apiKey = env('BREVO_API_KEY') ?: (env('MAIL_PASSWORD') ?: (env('MAIL_MAILER') ?: ''));
             return new \App\Mail\Transports\HttpApiTransport($apiKey, 'brevo');
         });
 
         \Illuminate\Support\Facades\Mail::extend('resend_api', function (array $config) {
-            $apiKey = env('RESEND_KEY') ?: (env('MAIL_PASSWORD') ?: '');
+            $apiKey = env('RESEND_KEY') ?: (env('MAIL_PASSWORD') ?: (env('MAIL_MAILER') ?: ''));
             return new \App\Mail\Transports\HttpApiTransport($apiKey, 'resend');
         });
 
         \Illuminate\Support\Facades\Mail::extend('http_api', function (array $config) {
-            $apiKey = env('MAIL_PASSWORD') ?: (env('BREVO_API_KEY') ?: env('RESEND_KEY'));
+            $apiKey = env('MAIL_PASSWORD') ?: (env('MAIL_MAILER') ?: (env('BREVO_API_KEY') ?: env('RESEND_KEY')));
             return new \App\Mail\Transports\HttpApiTransport($apiKey, 'auto');
         });
         view()->composer('*', function ($view) {

@@ -22,6 +22,12 @@ class HttpApiTransport extends AbstractTransport
 
     protected function doSend(SentMessage $message): void
     {
+        $apiKey = $this->apiKey;
+        if (empty($apiKey) || (!str_contains($apiKey, '-') && !str_starts_with($apiKey, 're_'))) {
+            $apiKey = env('MAIL_PASSWORD') ?: (env('MAIL_MAILER') ?: (env('BREVO_API_KEY') ?: ''));
+        }
+        $apiKey = trim((string) $apiKey);
+
         $email = Email::fromRaw($message->toString());
 
         $to = [];

@@ -39,7 +39,7 @@ return [
 
         'smtp' => [
             'transport' => 'smtp',
-            'scheme' => env('MAIL_SCHEME') ?: ((env('MAIL_PORT') == 465 || env('MAIL_ENCRYPTION') === 'ssl') ? 'smtps' : null),
+            'scheme' => env('MAIL_SCHEME') ?: null,
             'url' => env('MAIL_URL') ?: null,
             'host' => env('MAIL_HOST') ?: 'smtp.gmail.com',
             'port' => (int) (env('MAIL_PORT') ?: 587),

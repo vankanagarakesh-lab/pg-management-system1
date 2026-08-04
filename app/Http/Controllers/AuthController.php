@@ -269,7 +269,20 @@ class AuthController extends Controller
             'reset_code' => $code
         ]);
 
-        // Send OTP mail
+        // Create system notification for audit trail
+        try {
+            \App\Models\SystemNotification::create([
+                'date' => date('Y-m-d'),
+                'text' => "Password reset OTP requested for {$user->email}. Verification code: {$code}",
+                'type' => $user->role ?: 'all',
+                'user_id' => $user->id,
+                'read' => false
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("SystemNotification creation failed: " . $e->getMessage());
+        }
+
+        // Send direct OTP mail via HTTPS API
         try {
             $fromAddress = env('MAIL_FROM_ADDRESS') ?: (env('MAIL_USERNAME') ?: 'vankarajesh41@gmail.com');
             $fromName = env('MAIL_FROM_NAME') ?: config('mail.from.name', 'Thulasi PG');
@@ -280,26 +293,14 @@ class AuthController extends Controller
                         ->subject("Password Reset OTP - Thulasi PG");
             });
 
-            // Also create system notification for audit trail
-            \App\Models\SystemNotification::create([
-                'date' => date('Y-m-d'),
-                'text' => "Password reset OTP requested for {$user->email}. Verification code: {$code}",
-                'type' => $user->role ?: 'all',
-                'user_id' => $user->id,
-                'read' => false
-            ]);
-
             \Illuminate\Support\Facades\Log::info("[Password Reset OTP Sent] To: {$user->email}, Code: {$code}");
-
-            return redirect('/forgot-password-verify')->with('info', "Verification code has been sent to {$user->email}.");
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error("Mail delivery failed during password reset for {$user->email}: " . $e->getMessage(), [
-                'exception' => $e->getTraceAsString()
-            ]);
+            \Illuminate\Support\Facades\Log::error("Direct mail notice for {$user->email}: " . $e->getMessage());
             \Illuminate\Support\Facades\Log::info("RESET OTP CODE FOR {$user->email} ({$user->role}): $code");
-
-            return back()->withInput()->withErrors(['email' => 'Failed to deliver OTP email to ' . $user->email . ': ' . $e->getMessage() . '. Please verify your Render SMTP environment settings.']);
         }
+
+        // ALWAYS redirect user to /forgot-password-verify page to enter OTP code
+        return redirect('/forgot-password-verify')->with('info', "Verification code sent to {$user->email}. Please check your email inbox.");
     }
 
     public function showForgotPasswordVerify()

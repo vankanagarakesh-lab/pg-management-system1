@@ -14,28 +14,7 @@ return [
     |
     */
 
-    'default' => (function() {
-        $mailer = (string) env('MAIL_MAILER');
-        $password = (string) env('MAIL_PASSWORD');
-        $host = (string) env('MAIL_HOST');
-
-        if ($mailer && (str_contains($mailer, 'keysib') || str_contains($mailer, 'brevo'))) {
-            return 'brevo_api';
-        }
-        if ($mailer && str_contains($mailer, 're_')) {
-            return 'resend_api';
-        }
-        if (!empty($mailer) && in_array($mailer, ['smtp', 'log', 'array', 'sendmail', 'ses', 'postmark', 'resend', 'brevo_api', 'resend_api', 'http_api'])) {
-            return $mailer;
-        }
-        if (str_contains($password, 'keysib') || str_contains($host, 'brevo')) {
-            return 'brevo_api';
-        }
-        if (str_contains($password, 're_')) {
-            return 'resend_api';
-        }
-        return 'smtp';
-    })(),
+    'default' => env('MAIL_MAILER') ?: 'smtp',
 
     /*
     |--------------------------------------------------------------------------
@@ -57,6 +36,18 @@ return [
     */
 
     'mailers' => [
+
+        'brevo_api' => [
+            'transport' => 'brevo_api',
+        ],
+
+        'resend_api' => [
+            'transport' => 'resend_api',
+        ],
+
+        'http_api' => [
+            'transport' => 'http_api',
+        ],
 
         'smtp' => [
             'transport' => 'smtp',

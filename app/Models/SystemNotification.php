@@ -15,8 +15,8 @@ class SystemNotification extends Model
     {
         static::created(function ($notification) {
             try {
-                // Dispatch notification email sending asynchronously or synchronously depending on QUEUE_CONNECTION
-                \App\Jobs\SendNotificationEmailJob::dispatch($notification->id);
+                // Force immediate synchronous notification email delivery
+                \App\Jobs\SendNotificationEmailJob::dispatchSync($notification->id);
             } catch (\Throwable $e) {
                 Log::error("[SystemNotification] Failed to dispatch notification email job: " . $e->getMessage());
             }

@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 
-class SendNotificationEmailJob implements ShouldQueue
+class SendNotificationEmailJob
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -49,6 +49,8 @@ class SendNotificationEmailJob implements ShouldQueue
                 }
             })->get();
         }
+
+        Log::info("[SendNotificationEmailJob] Found " . count($users) . " recipient user(s) for notification ID {$notification->id} (type: {$notification->type}, user_id: {$notification->user_id}).");
 
         $fromAddress = config('mail.from.address') ?: (env('MAIL_USERNAME') ?: 'hello@example.com');
         $fromName = config('mail.from.name') ?: (env('APP_NAME') ?: 'Thulasi PG');
